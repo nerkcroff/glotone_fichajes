@@ -20,6 +20,14 @@
   /* Danger */
   --danger: #ef4444;
   --danger-hover: #dc2626;
+
+  /* Warning */
+  --warning: #f59e0b;
+  --warning-hover: #d97706;
+
+  /* Success */
+  --success: #10b981;
+  --success-hover: #059669;
 }
 
 :root[data-theme='dark'] {
@@ -42,6 +50,14 @@
   /* Danger */
   --danger: #ef4444;
   --danger-hover: #f87171;
+
+  /* Warning */
+  --warning: #f59e0b;
+  --warning-hover: #fbbf24;
+
+  /* Success */
+  --success: #10b981;
+  --success-hover: #34d399;
 }
 
 /* Reset básico */
