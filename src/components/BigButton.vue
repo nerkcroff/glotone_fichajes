@@ -4,7 +4,8 @@
     :class="{
       'big-button-primary': variant === 'primary',
       'big-button-secondary': variant === 'secondary',
-      'big-button-danger': variant === 'danger'
+      'big-button-danger': variant === 'danger',
+      'big-button-warning': variant === 'warning'
     }"
     :disabled="disabled"
     @click="$emit('click')"
@@ -15,7 +16,7 @@
 
 <script setup lang="ts">
 defineProps<{
-  variant?: 'primary' | 'secondary' | 'danger'
+  variant?: 'primary' | 'secondary' | 'danger' | 'warning'
   disabled?: boolean
 }>()
 
@@ -76,5 +77,14 @@ defineEmits<{
 
 .big-button-danger:not(:disabled):hover {
   background: var(--danger-hover);
+}
+
+.big-button-warning {
+  background: var(--warning);
+  color: white;
+}
+
+.big-button-warning:not(:disabled):hover {
+  background: var(--warning-hover);
 }
 </style>
