@@ -99,8 +99,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useEmployeeStore } from '@/stores/employee.store'
-import { useBreaksStore } from '@/stores/breaks.store'
+import { useEmployeeStore } from '@/stores/employee.store.ts'
+import { useBreaksStore } from '@/stores/breaks.store.ts'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import BigButton from '@/components/BigButton.vue'
 import BannerToast from '@/components/BannerToast.vue'

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import apiClient from '@/lib/apiClient'
+import apiClient from '@/lib/apiClient.ts'
 
 interface Employee {
   id: string

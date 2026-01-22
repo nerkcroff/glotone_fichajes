@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useThemeStore } from '@/stores/theme.store'
+import { useThemeStore } from '@/stores/theme.store.ts'
 
 const themeStore = useThemeStore()
 

@@ -32,8 +32,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useEmployeeStore } from '@/stores/employee.store'
-import apiClient from '@/lib/apiClient'
+import { useEmployeeStore } from '@/stores/employee.store.ts'
+import apiClient from '@/lib/apiClient.ts'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import PinPad from '@/components/PinPad.vue'
 import BannerToast from '@/components/BannerToast.vue'
