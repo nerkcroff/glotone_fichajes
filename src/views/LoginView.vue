@@ -46,7 +46,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth.store'
+import { useAuthStore } from '@/stores/auth.store.ts'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import BigButton from '@/components/BigButton.vue'
 import BannerToast from '@/components/BannerToast.vue'
