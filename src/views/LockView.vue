@@ -417,7 +417,7 @@ async function handleLogout() {
 .logout-button {
   position: fixed;
   top: 1rem;
-  right: 1rem;
+  left: 1rem;
   background: var(--surface);
   border: 2px solid var(--border);
   border-radius: 8px;
