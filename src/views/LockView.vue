@@ -110,13 +110,14 @@
           <p class="time-display">{{ currentTime }}</p>
         </div>
 
-        <!-- Pantalla de fichaje pendiente de aprobación -->
+        <!-- Pantalla de sin turno asignado -->
         <div v-else-if="currentScreen === 'pending-approval'" class="welcome-screen">
-          <div class="welcome-icon">⏳</div>
-          <h2>Fichaje pendiente</h2>
+          <div class="welcome-icon">⚠️</div>
+          <h2>Sin turno asignado</h2>
           <p class="employee-name">{{ currentEmployeeName }}</p>
-          <p class="welcome-message">Tu fichaje está pendiente de aprobación por el supervisor</p>
-          <p class="info-text">Serás notificado cuando sea aprobado</p>
+          <p class="welcome-message">No tienes turno asignado para hoy</p>
+          <p class="info-text">No se creará registro de fichaje</p>
+          <p class="supervisor-contact">Si crees que es un error, contacta con tu supervisor</p>
         </div>
       </div>
     </div>
@@ -555,6 +556,15 @@ async function handleLogout() {
   color: var(--text-secondary);
   margin: 0.5rem 0;
   font-style: italic;
+}
+
+.supervisor-contact {
+  font-size: 0.95rem;
+  color: var(--warning);
+  font-weight: 600;
+  margin: 1rem 0 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
 }
 
 .time-display {
