@@ -249,6 +249,9 @@ async function handlePinSubmit(pin: string) {
       // Cargar estado de fichaje actual
       await employeeStore.fetchCurrentTracking(employee.id)
 
+      console.log('🔍 DEBUG - Current tracking:', employeeStore.currentTracking)
+      console.log('🔍 DEBUG - Is on break:', breaksStore.isOnBreak)
+
       currentEmployeeName.value = `${employee.first_name} ${employee.last_name}`
 
       // Verificar si tiene fichaje activo

@@ -78,6 +78,8 @@ export const useEmployeeStore = defineStore('employee', () => {
         params: { employee_id: employeeId }
       })
 
+      console.log('🔍 DEBUG - fetchCurrentTracking response:', response.data)
+
       currentTracking.value = response.data || null
       return currentTracking.value
     } catch (error) {
@@ -95,6 +97,8 @@ export const useEmployeeStore = defineStore('employee', () => {
       type: 'clock_in',
       location
     })
+
+    console.log('🔍 DEBUG - clockIn response:', response.data)
 
     currentTracking.value = response.data.tracking
     return response.data
