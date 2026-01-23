@@ -109,6 +109,15 @@
           <p class="welcome-message">Disfruta tu descanso</p>
           <p class="time-display">{{ currentTime }}</p>
         </div>
+
+        <!-- Pantalla de fichaje pendiente de aprobación -->
+        <div v-else-if="currentScreen === 'pending-approval'" class="welcome-screen">
+          <div class="welcome-icon">⏳</div>
+          <h2>Fichaje pendiente</h2>
+          <p class="employee-name">{{ currentEmployeeName }}</p>
+          <p class="welcome-message">Tu fichaje está pendiente de aprobación por el supervisor</p>
+          <p class="info-text">Serás notificado cuando sea aprobado</p>
+        </div>
       </div>
     </div>
   </div>
@@ -131,7 +140,7 @@ const employeeStore = useEmployeeStore()
 const breaksStore = useBreaksStore()
 const authStore = useAuthStore()
 
-type Screen = 'pin' | 'welcome' | 'options' | 'resume' | 'goodbye' | 'break-started'
+type Screen = 'pin' | 'welcome' | 'options' | 'resume' | 'goodbye' | 'break-started' | 'pending-approval'
 
 const currentScreen = ref<Screen>('pin')
 const loading = ref(false)
@@ -293,20 +302,35 @@ async function handlePinSubmit(pin: string) {
 
 async function handleAutoClockIn() {
   try {
-    await employeeStore.clockIn()
+    const response = await employeeStore.clockIn()
 
-    // Mostrar pantalla de bienvenida
-    currentScreen.value = 'welcome'
-    updateCurrentTime()
-
-    // Actualizar hora cada segundo
-    clearTimeUpdateInterval()
-    timeUpdateInterval = window.setInterval(() => {
+    // Verificar si el fichaje está pendiente de aprobación
+    if (response.pending_approval) {
+      // Mostrar pantalla de pending approval
+      currentScreen.value = 'pending-approval'
       updateCurrentTime()
-    }, 1000)
 
-    // Volver al PIN pad después de 15 segundos
-    scheduleReturnToPinPad(15)
+      clearTimeUpdateInterval()
+      timeUpdateInterval = window.setInterval(() => {
+        updateCurrentTime()
+      }, 1000)
+
+      // Volver al PIN pad después de 15 segundos
+      scheduleReturnToPinPad(15)
+    } else {
+      // Fichaje aprobado automáticamente - Mostrar pantalla de bienvenida
+      currentScreen.value = 'welcome'
+      updateCurrentTime()
+
+      // Actualizar hora cada segundo
+      clearTimeUpdateInterval()
+      timeUpdateInterval = window.setInterval(() => {
+        updateCurrentTime()
+      }, 1000)
+
+      // Volver al PIN pad después de 15 segundos
+      scheduleReturnToPinPad(15)
+    }
   } catch (error: any) {
     errorMessage.value = error.response?.data?.detail || 'Error al fichar entrada'
     showError.value = true
@@ -524,6 +548,13 @@ async function handleLogout() {
   font-size: 1.2rem;
   color: var(--text-secondary);
   margin: 1rem 0;
+}
+
+.info-text {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin: 0.5rem 0;
+  font-style: italic;
 }
 
 .time-display {
