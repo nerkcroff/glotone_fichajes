@@ -44,6 +44,10 @@
           <p class="employee-name">{{ currentEmployeeName }}</p>
           <p class="welcome-message">Tu entrada ha sido registrada</p>
           <p class="time-display">{{ currentTime }}</p>
+          <div class="reminder-box">
+            <p class="reminder-icon">📱🚫</p>
+            <p class="reminder-text">Recuerda dejar tu móvil en la taquilla durante tu turno</p>
+          </div>
         </div>
 
         <!-- Pantalla de opciones (pausa/salida) -->
@@ -415,7 +419,7 @@ async function handleLogout() {
   top: 1rem;
   right: 1rem;
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: 8px;
   padding: 0.75rem;
   cursor: pointer;
@@ -425,12 +429,15 @@ async function handleLogout() {
   transition: all 0.2s;
   color: var(--text);
   z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .logout-button:hover {
   background: var(--danger);
   color: white;
-  transform: scale(1.05);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  border-color: var(--danger);
 }
 
 .logout-button svg {
@@ -522,6 +529,28 @@ async function handleLogout() {
   font-weight: 700;
   margin-top: 1.5rem;
   font-family: 'Courier New', monospace;
+}
+
+.reminder-box {
+  margin-top: 2rem;
+  padding: 1rem 1.5rem;
+  background: rgba(245, 158, 11, 0.1);
+  border: 2px solid var(--warning);
+  border-radius: 12px;
+  animation: fadeInScale 0.5s ease-out 0.3s both;
+}
+
+.reminder-icon {
+  font-size: 2rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.reminder-text {
+  font-size: 1rem;
+  color: var(--text);
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.4;
 }
 
 .work-time {
