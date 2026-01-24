@@ -3,10 +3,22 @@ import { ref } from 'vue'
 import { supabase } from '@/lib/supabaseClient.ts'
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref<string | null>(localStorage.getItem('supabase_token'))
+  const token = ref<string | null>(null)
   const tenantId = ref<string | null>(localStorage.getItem('tenant_id'))
   const userRole = ref<string | null>(localStorage.getItem('user_role'))
-  const isAuthenticated = ref<boolean>(!!token.value && !!tenantId.value)
+  const isAuthenticated = ref<boolean>(false)
+
+  // Inicializar sesión desde Supabase
+  async function initSession() {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.access_token && tenantId.value) {
+      token.value = session.access_token
+      isAuthenticated.value = true
+    }
+  }
+
+  // Llamar initSession al cargar el store
+  initSession()
 
   async function login(email: string, password: string) {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -20,9 +32,8 @@ export const useAuthStore = defineStore('auth', () => {
       throw new Error('No session returned')
     }
 
-    // Guardar token
+    // Supabase gestiona el token automáticamente
     token.value = data.session.access_token
-    localStorage.setItem('supabase_token', token.value)
 
     // Obtener tenant_id y role desde tenant_users
     const { data: userTenant, error: tenantError } = await supabase
@@ -52,7 +63,7 @@ export const useAuthStore = defineStore('auth', () => {
     userRole.value = null
     isAuthenticated.value = false
 
-    localStorage.removeItem('supabase_token')
+    // Supabase limpia su sesión automáticamente
     localStorage.removeItem('tenant_id')
     localStorage.removeItem('user_role')
 
