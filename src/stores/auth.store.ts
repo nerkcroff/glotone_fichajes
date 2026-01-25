@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase } from '@/lib/supabaseClient.ts'
+import { useEmployeeStore } from './employee.store'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(null)
@@ -67,7 +68,10 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('tenant_id')
     localStorage.removeItem('user_role')
 
-    // NO limpiar employee_data, eso lo hace employee.store
+    // Limpiar empleado de memoria pero mantener en localStorage
+    // Esto permite que los empleados sigan fichados aunque el restaurante cierre sesión
+    const employeeStore = useEmployeeStore()
+    employeeStore.clearEmployee(true)
   }
 
   return {

@@ -3,15 +3,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useEmployeeStore } from '@/stores/employee.store.ts'
-
-const employeeStore = useEmployeeStore()
-
-onMounted(() => {
-  // Intentar cargar empleado guardado
-  employeeStore.loadEmployee()
-})
+// No cargar empleado automáticamente al iniciar la app
+// El empleado solo se carga cuando se verifica el PIN en LockView
 </script>
 
 <style>
