@@ -80,18 +80,32 @@ export const useEmployeeStore = defineStore('employee', () => {
 
   async function fetchCurrentTracking(employeeId: string) {
     try {
-      const response = await apiClient.get('/personal/time-tracking/current', {
-        params: { employee_id: employeeId }
-      })
+      const response = await apiClient.get(`/personal/employees/${employeeId}/shift-status`)
 
-      console.log('🔍 DEBUG - fetchCurrentTracking response:', response.data)
+      console.log('🔍 DEBUG - shift-status response:', response.data)
 
-      currentTracking.value = response.data || null
-      return currentTracking.value
+      // El endpoint shift-status devuelve current_entry con el tracking actual
+      if (response.data && response.data.current_entry) {
+        currentTracking.value = {
+          id: response.data.current_entry.id,
+          employee_id: employeeId,
+          clock_in: response.data.current_entry.clock_in_time,
+          clock_out: response.data.current_entry.clock_out_time,
+          total_hours: null
+        }
+      } else {
+        currentTracking.value = null
+      }
+
+      // Devolver también el active_break para que breaks.store lo pueda usar
+      return {
+        tracking: currentTracking.value,
+        active_break: response.data?.active_break || null
+      }
     } catch (error) {
       console.error('Error fetching current tracking:', error)
       currentTracking.value = null
-      return null
+      return { tracking: null, active_break: null }
     }
   }
 

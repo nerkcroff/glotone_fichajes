@@ -71,23 +71,25 @@ export const useBreaksStore = defineStore('breaks', () => {
   async function fetchCurrentBreak(employeeId: string) {
     try {
       const response = await apiClient.get(
-        `/personal/time-tracking/breaks/current?employee_id=${employeeId}`
+        `/personal/employees/${employeeId}/shift-status`
       )
 
-      if (response.data && response.data.break) {
-        currentBreak.value = response.data.break
+      // El endpoint devuelve active_break dentro de la respuesta
+      if (response.data && response.data.active_break) {
+        currentBreak.value = {
+          id: response.data.active_break.id,
+          break_start: response.data.active_break.break_start,
+          break_end: response.data.active_break.break_end,
+          break_type: response.data.active_break.break_type
+        }
       } else {
         currentBreak.value = null
       }
 
       return currentBreak.value
     } catch (error: any) {
-      // Si es 404, significa que no hay pausa activa
-      if (error.response?.status === 404) {
-        currentBreak.value = null
-      } else {
-        console.error('Error fetching current break:', error)
-      }
+      console.error('Error fetching current break:', error)
+      currentBreak.value = null
       return null
     }
   }
