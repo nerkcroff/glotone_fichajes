@@ -255,12 +255,24 @@ async function handlePinSubmit(pin: string) {
       // Guardar empleado en store
       employeeStore.setEmployee(employee)
 
-      // Cargar estado de fichaje actual y pausas
-      await employeeStore.fetchCurrentTracking(employee.id)
-      await breaksStore.fetchCurrentBreak(employee.id)
+      // Cargar estado de fichaje y pausas en una sola llamada
+      const shiftStatus = await employeeStore.fetchCurrentTracking(employee.id)
+
+      // Actualizar el estado de pausa con los datos del shift-status
+      if (shiftStatus.active_break) {
+        breaksStore.setCurrentBreak({
+          id: shiftStatus.active_break.id,
+          break_start: shiftStatus.active_break.break_start,
+          break_end: shiftStatus.active_break.break_end,
+          break_type: shiftStatus.active_break.break_type
+        })
+      } else {
+        breaksStore.clearBreak()
+      }
 
       console.log('🔍 DEBUG - Current tracking:', employeeStore.currentTracking)
       console.log('🔍 DEBUG - Is on break:', breaksStore.isOnBreak)
+      console.log('🔍 DEBUG - Active break:', shiftStatus.active_break)
 
       currentEmployeeName.value = `${employee.first_name} ${employee.last_name}`
 
