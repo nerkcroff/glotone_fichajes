@@ -202,14 +202,12 @@ async function handleClockOut() {
   try {
     const location = await getLocation()
 
-    // Si hay pausa activa, terminarla primero
-    let notes = undefined
-    if (isOnBreak.value) {
-      breaksStore.endBreak()
-      notes = breaksStore.getBreakSummary()
+    // Si hay pausa activa, terminarla primero en el backend
+    if (isOnBreak.value && employeeStore.employee?.id) {
+      await breaksStore.endBreak(employeeStore.employee.id)
     }
 
-    await employeeStore.clockOut(location, notes)
+    await employeeStore.clockOut(location)
 
     successMessage.value = 'Salida registrada correctamente'
     showSuccess.value = true
@@ -229,16 +227,30 @@ async function handleClockOut() {
   }
 }
 
-function handleStartBreak() {
-  breaksStore.startBreak()
-  successMessage.value = 'Pausa iniciada'
-  showSuccess.value = true
+async function handleStartBreak() {
+  if (!employeeStore.employee?.id) return
+
+  try {
+    await breaksStore.startBreak(employeeStore.employee.id)
+    successMessage.value = 'Pausa iniciada'
+    showSuccess.value = true
+  } catch (error: any) {
+    errorMessage.value = error.response?.data?.detail || 'Error al iniciar pausa'
+    showError.value = true
+  }
 }
 
-function handleEndBreak() {
-  breaksStore.endBreak()
-  successMessage.value = 'Trabajo reanudado'
-  showSuccess.value = true
+async function handleEndBreak() {
+  if (!employeeStore.employee?.id) return
+
+  try {
+    await breaksStore.endBreak(employeeStore.employee.id)
+    successMessage.value = 'Trabajo reanudado'
+    showSuccess.value = true
+  } catch (error: any) {
+    errorMessage.value = error.response?.data?.detail || 'Error al reanudar trabajo'
+    showError.value = true
+  }
 }
 
 function handleChangeEmployee() {

@@ -255,8 +255,9 @@ async function handlePinSubmit(pin: string) {
       // Guardar empleado en store
       employeeStore.setEmployee(employee)
 
-      // Cargar estado de fichaje actual
+      // Cargar estado de fichaje actual y pausas
       await employeeStore.fetchCurrentTracking(employee.id)
+      await breaksStore.fetchCurrentBreak(employee.id)
 
       console.log('🔍 DEBUG - Current tracking:', employeeStore.currentTracking)
       console.log('🔍 DEBUG - Is on break:', breaksStore.isOnBreak)
@@ -345,16 +346,22 @@ async function handleStartBreak() {
   loading.value = true
 
   try {
-    breaksStore.startBreak()
+    if (!employeeStore.employee?.id) {
+      throw new Error('No employee ID available')
+    }
+
+    const response = await breaksStore.startBreak(employeeStore.employee.id)
 
     // Mostrar pantalla de pausa iniciada con hora fija
     currentScreen.value = 'break-started'
-    setFixedTime(new Date().toISOString())
+    if (response.break?.break_start) {
+      setFixedTime(response.break.break_start)
+    }
 
     // Volver al PIN pad después de 15 segundos
     scheduleReturnToPinPad(15)
   } catch (error: any) {
-    errorMessage.value = 'Error al iniciar pausa'
+    errorMessage.value = error.response?.data?.detail || 'Error al iniciar pausa'
     showError.value = true
   } finally {
     loading.value = false
@@ -368,6 +375,11 @@ async function handleClockOut() {
     const tracking = employeeStore.currentTracking
     if (tracking) {
       workTime.value = calculateWorkTime(tracking.clock_in)
+    }
+
+    // Si hay pausa activa, terminarla primero en el backend
+    if (breaksStore.isOnBreak && employeeStore.employee?.id) {
+      await breaksStore.endBreak(employeeStore.employee.id)
     }
 
     await employeeStore.clockOut()
@@ -390,16 +402,22 @@ async function handleClockOut() {
 
 async function handleAutoResumeBreak() {
   try {
-    breaksStore.endBreak()
+    if (!employeeStore.employee?.id) {
+      throw new Error('No employee ID available')
+    }
+
+    const response = await breaksStore.endBreak(employeeStore.employee.id)
 
     // Mostrar pantalla de reanudación con hora fija
     currentScreen.value = 'resume'
-    setFixedTime(new Date().toISOString())
+    if (response.break?.break_end) {
+      setFixedTime(response.break.break_end)
+    }
 
     // Volver al PIN pad después de 15 segundos
     scheduleReturnToPinPad(15)
   } catch (error: any) {
-    errorMessage.value = 'Error al reanudar turno'
+    errorMessage.value = error.response?.data?.detail || 'Error al reanudar turno'
     showError.value = true
     returnToPinPad()
   }
