@@ -424,10 +424,8 @@ async function handleAutoResumeBreak() {
 }
 
 async function handleLogout() {
-  if (confirm('¿Estás seguro de que quieres cerrar turno?')) {
-    await authStore.logout()
-    router.push('/login')
-  }
+  await authStore.logout()
+  router.push('/login')
 }
 </script>
 
