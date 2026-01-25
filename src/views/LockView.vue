@@ -201,12 +201,11 @@ function scheduleReturnToPinPad(seconds: number = 15) {
   }, seconds * 1000)
 }
 
-function updateCurrentTime() {
-  const now = new Date()
-  currentTime.value = now.toLocaleTimeString('es-ES', {
+function setFixedTime(timestamp: string) {
+  const date = new Date(timestamp)
+  currentTime.value = date.toLocaleTimeString('es-ES', {
     hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
+    minute: '2-digit'
   })
 }
 
@@ -309,25 +308,18 @@ async function handleAutoClockIn() {
     if (response.pending_approval) {
       // Mostrar pantalla de pending approval
       currentScreen.value = 'pending-approval'
-      updateCurrentTime()
-
-      clearTimeUpdateInterval()
-      timeUpdateInterval = window.setInterval(() => {
-        updateCurrentTime()
-      }, 1000)
+      if (employeeStore.currentTracking?.clock_in) {
+        setFixedTime(employeeStore.currentTracking.clock_in)
+      }
 
       // Volver al PIN pad después de 15 segundos
       scheduleReturnToPinPad(15)
     } else {
       // Fichaje aprobado automáticamente - Mostrar pantalla de bienvenida
       currentScreen.value = 'welcome'
-      updateCurrentTime()
-
-      // Actualizar hora cada segundo
-      clearTimeUpdateInterval()
-      timeUpdateInterval = window.setInterval(() => {
-        updateCurrentTime()
-      }, 1000)
+      if (employeeStore.currentTracking?.clock_in) {
+        setFixedTime(employeeStore.currentTracking.clock_in)
+      }
 
       // Volver al PIN pad después de 15 segundos
       scheduleReturnToPinPad(15)
@@ -355,14 +347,9 @@ async function handleStartBreak() {
   try {
     breaksStore.startBreak()
 
-    // Mostrar pantalla de pausa iniciada
+    // Mostrar pantalla de pausa iniciada con hora fija
     currentScreen.value = 'break-started'
-    updateCurrentTime()
-
-    clearTimeUpdateInterval()
-    timeUpdateInterval = window.setInterval(() => {
-      updateCurrentTime()
-    }, 1000)
+    setFixedTime(new Date().toISOString())
 
     // Volver al PIN pad después de 15 segundos
     scheduleReturnToPinPad(15)
@@ -405,14 +392,9 @@ async function handleAutoResumeBreak() {
   try {
     breaksStore.endBreak()
 
-    // Mostrar pantalla de reanudación
+    // Mostrar pantalla de reanudación con hora fija
     currentScreen.value = 'resume'
-    updateCurrentTime()
-
-    clearTimeUpdateInterval()
-    timeUpdateInterval = window.setInterval(() => {
-      updateCurrentTime()
-    }, 1000)
+    setFixedTime(new Date().toISOString())
 
     // Volver al PIN pad después de 15 segundos
     scheduleReturnToPinPad(15)
