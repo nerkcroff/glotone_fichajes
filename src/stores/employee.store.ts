@@ -40,11 +40,17 @@ export const useEmployeeStore = defineStore('employee', () => {
     resetInactivityTimer()
   }
 
-  function clearEmployee() {
+  function clearEmployee(keepLocalStorage = false) {
     employee.value = null
     currentTracking.value = null
     sessionExpiry.value = null
-    localStorage.removeItem('employee_data')
+
+    // Solo eliminar de localStorage si no se especifica mantenerlo
+    // Esto permite mantener el estado de fichaje cuando el restaurante cierra sesión
+    if (!keepLocalStorage) {
+      localStorage.removeItem('employee_data')
+    }
+
     if (inactivityTimer) {
       clearTimeout(inactivityTimer)
       inactivityTimer = null

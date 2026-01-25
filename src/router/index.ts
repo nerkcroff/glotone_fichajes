@@ -52,10 +52,8 @@ router.beforeEach((to, from, next) => {
     return next('/lock')
   }
 
-  // Con empleado activo pero en /lock => /clock
-  if (to.path === '/lock' && employeeStore.employee) {
-    return next('/clock')
-  }
+  // NO redirigir automáticamente a /clock cuando hay empleado
+  // La pantalla de PIN siempre debe mostrarse primero
 
   next()
 })
