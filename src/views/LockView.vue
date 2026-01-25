@@ -201,12 +201,11 @@ function scheduleReturnToPinPad(seconds: number = 15) {
   }, seconds * 1000)
 }
 
-function updateCurrentTime() {
-  const now = new Date()
-  currentTime.value = now.toLocaleTimeString('es-ES', {
+function setFixedTime(timestamp: string) {
+  const date = new Date(timestamp)
+  currentTime.value = date.toLocaleTimeString('es-ES', {
     hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
+    minute: '2-digit'
   })
 }
 
@@ -256,8 +255,9 @@ async function handlePinSubmit(pin: string) {
       // Guardar empleado en store
       employeeStore.setEmployee(employee)
 
-      // Cargar estado de fichaje actual
+      // Cargar estado de fichaje actual y pausas
       await employeeStore.fetchCurrentTracking(employee.id)
+      await breaksStore.fetchCurrentBreak(employee.id)
 
       console.log('🔍 DEBUG - Current tracking:', employeeStore.currentTracking)
       console.log('🔍 DEBUG - Is on break:', breaksStore.isOnBreak)
@@ -309,25 +309,18 @@ async function handleAutoClockIn() {
     if (response.pending_approval) {
       // Mostrar pantalla de pending approval
       currentScreen.value = 'pending-approval'
-      updateCurrentTime()
-
-      clearTimeUpdateInterval()
-      timeUpdateInterval = window.setInterval(() => {
-        updateCurrentTime()
-      }, 1000)
+      if (employeeStore.currentTracking?.clock_in) {
+        setFixedTime(employeeStore.currentTracking.clock_in)
+      }
 
       // Volver al PIN pad después de 15 segundos
       scheduleReturnToPinPad(15)
     } else {
       // Fichaje aprobado automáticamente - Mostrar pantalla de bienvenida
       currentScreen.value = 'welcome'
-      updateCurrentTime()
-
-      // Actualizar hora cada segundo
-      clearTimeUpdateInterval()
-      timeUpdateInterval = window.setInterval(() => {
-        updateCurrentTime()
-      }, 1000)
+      if (employeeStore.currentTracking?.clock_in) {
+        setFixedTime(employeeStore.currentTracking.clock_in)
+      }
 
       // Volver al PIN pad después de 15 segundos
       scheduleReturnToPinPad(15)
@@ -353,21 +346,22 @@ async function handleStartBreak() {
   loading.value = true
 
   try {
-    breaksStore.startBreak()
+    if (!employeeStore.employee?.id) {
+      throw new Error('No employee ID available')
+    }
 
-    // Mostrar pantalla de pausa iniciada
+    const response = await breaksStore.startBreak(employeeStore.employee.id)
+
+    // Mostrar pantalla de pausa iniciada con hora fija
     currentScreen.value = 'break-started'
-    updateCurrentTime()
-
-    clearTimeUpdateInterval()
-    timeUpdateInterval = window.setInterval(() => {
-      updateCurrentTime()
-    }, 1000)
+    if (response.break?.break_start) {
+      setFixedTime(response.break.break_start)
+    }
 
     // Volver al PIN pad después de 15 segundos
     scheduleReturnToPinPad(15)
   } catch (error: any) {
-    errorMessage.value = 'Error al iniciar pausa'
+    errorMessage.value = error.response?.data?.detail || 'Error al iniciar pausa'
     showError.value = true
   } finally {
     loading.value = false
@@ -381,6 +375,11 @@ async function handleClockOut() {
     const tracking = employeeStore.currentTracking
     if (tracking) {
       workTime.value = calculateWorkTime(tracking.clock_in)
+    }
+
+    // Si hay pausa activa, terminarla primero en el backend
+    if (breaksStore.isOnBreak && employeeStore.employee?.id) {
+      await breaksStore.endBreak(employeeStore.employee.id)
     }
 
     await employeeStore.clockOut()
@@ -403,21 +402,22 @@ async function handleClockOut() {
 
 async function handleAutoResumeBreak() {
   try {
-    breaksStore.endBreak()
+    if (!employeeStore.employee?.id) {
+      throw new Error('No employee ID available')
+    }
 
-    // Mostrar pantalla de reanudación
+    const response = await breaksStore.endBreak(employeeStore.employee.id)
+
+    // Mostrar pantalla de reanudación con hora fija
     currentScreen.value = 'resume'
-    updateCurrentTime()
-
-    clearTimeUpdateInterval()
-    timeUpdateInterval = window.setInterval(() => {
-      updateCurrentTime()
-    }, 1000)
+    if (response.break?.break_end) {
+      setFixedTime(response.break.break_end)
+    }
 
     // Volver al PIN pad después de 15 segundos
     scheduleReturnToPinPad(15)
   } catch (error: any) {
-    errorMessage.value = 'Error al reanudar turno'
+    errorMessage.value = error.response?.data?.detail || 'Error al reanudar turno'
     showError.value = true
     returnToPinPad()
   }

@@ -1,10 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import apiClient from '@/lib/apiClient'
 
 interface Break {
+  id?: string
   break_start: string // ISO timestamp
   break_end?: string | null // ISO timestamp
   duration_minutes?: number
+  break_type?: string
 }
 
 export const useBreaksStore = defineStore('breaks', () => {
@@ -25,40 +28,72 @@ export const useBreaksStore = defineStore('breaks', () => {
     return Math.floor((end - start) / 1000 / 60) // minutos
   })
 
-  function startBreak() {
-    currentBreak.value = {
-      break_start: new Date().toISOString(),
-      break_end: null
+  async function startBreak(employeeId: string, breakType: string = 'rest', notes?: string) {
+    try {
+      const response = await apiClient.post('/personal/time-tracking/breaks', {
+        employee_id: employeeId,
+        break_type: breakType,
+        notes: notes || 'Pausa'
+      })
+
+      if (response.data.success && response.data.break) {
+        currentBreak.value = response.data.break
+      }
+
+      return response.data
+    } catch (error) {
+      console.error('Error starting break:', error)
+      throw error
     }
-    saveToStorage()
   }
 
-  function endBreak() {
-    if (!currentBreak.value) return
+  async function endBreak(employeeId: string) {
+    try {
+      const response = await apiClient.put(
+        `/personal/time-tracking/breaks/current/end?employee_id=${employeeId}`
+      )
 
-    currentBreak.value.break_end = new Date().toISOString()
-    currentBreak.value.duration_minutes = breakDuration.value
-    saveToStorage()
+      if (response.data.success && response.data.break) {
+        currentBreak.value = response.data.break
+      }
 
-    // No limpiamos inmediatamente para poder mostrar el resumen
+      return response.data
+    } catch (error) {
+      console.error('Error ending break:', error)
+      throw error
+    }
   }
 
   function clearBreak() {
     currentBreak.value = null
-    localStorage.removeItem('current_break')
   }
 
-  function saveToStorage() {
-    if (currentBreak.value) {
-      localStorage.setItem('current_break', JSON.stringify(currentBreak.value))
+  async function fetchCurrentBreak(employeeId: string) {
+    try {
+      const response = await apiClient.get(
+        `/personal/time-tracking/breaks/current?employee_id=${employeeId}`
+      )
+
+      if (response.data && response.data.break) {
+        currentBreak.value = response.data.break
+      } else {
+        currentBreak.value = null
+      }
+
+      return currentBreak.value
+    } catch (error: any) {
+      // Si es 404, significa que no hay pausa activa
+      if (error.response?.status === 404) {
+        currentBreak.value = null
+      } else {
+        console.error('Error fetching current break:', error)
+      }
+      return null
     }
   }
 
-  function loadFromStorage() {
-    const stored = localStorage.getItem('current_break')
-    if (stored) {
-      currentBreak.value = JSON.parse(stored)
-    }
+  function setCurrentBreak(breakData: Break | null) {
+    currentBreak.value = breakData
   }
 
   function getBreakSummary(): string {
@@ -71,9 +106,6 @@ export const useBreaksStore = defineStore('breaks', () => {
     return `Pausa: ${hours}h ${minutes}min`
   }
 
-  // Cargar al inicializar
-  loadFromStorage()
-
   return {
     currentBreak,
     isOnBreak,
@@ -81,6 +113,8 @@ export const useBreaksStore = defineStore('breaks', () => {
     startBreak,
     endBreak,
     clearBreak,
+    fetchCurrentBreak,
+    setCurrentBreak,
     getBreakSummary
   }
 })
