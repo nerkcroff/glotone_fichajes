@@ -58,9 +58,12 @@ export const useBreaksStore = defineStore('breaks', () => {
       }
 
       return response.data
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error ending break:', error)
-      throw error
+
+      // Mostrar mensaje de error más descriptivo
+      const errorMessage = error.response?.data?.detail || error.message || 'Error al finalizar pausa'
+      throw new Error(errorMessage)
     }
   }
 
