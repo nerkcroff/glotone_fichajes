@@ -131,6 +131,7 @@ import { useEmployeeStore } from '@/stores/employee.store.ts'
 import { useBreaksStore } from '@/stores/breaks.store.ts'
 import { useAuthStore } from '@/stores/auth.store.ts'
 import apiClient from '@/lib/apiClient.ts'
+import { normalizeTimestamp } from '@/lib/normalizeTimestamp'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 import PinPad from '@/components/PinPad.vue'
 import BannerToast from '@/components/BannerToast.vue'
@@ -262,8 +263,8 @@ async function handlePinSubmit(pin: string) {
       if (shiftStatus.active_break) {
         breaksStore.setCurrentBreak({
           id: shiftStatus.active_break.id,
-          break_start: shiftStatus.active_break.break_start,
-          break_end: shiftStatus.active_break.break_end,
+          break_start: normalizeTimestamp(shiftStatus.active_break.break_start) ?? shiftStatus.active_break.break_start,
+          break_end: normalizeTimestamp(shiftStatus.active_break.break_end),
           break_type: shiftStatus.active_break.break_type
         })
       } else {

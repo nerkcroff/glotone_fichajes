@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import apiClient from '@/lib/apiClient'
+import { normalizeTimestamp } from '@/lib/normalizeTimestamp'
 
 interface Break {
   id?: string
@@ -37,7 +38,11 @@ export const useBreaksStore = defineStore('breaks', () => {
       })
 
       if (response.data.success && response.data.break) {
-        currentBreak.value = response.data.break
+        currentBreak.value = {
+          ...response.data.break,
+          break_start: normalizeTimestamp(response.data.break.break_start) ?? response.data.break.break_start,
+          break_end: normalizeTimestamp(response.data.break.break_end) ?? response.data.break.break_end
+        }
       }
 
       return response.data
@@ -49,12 +54,28 @@ export const useBreaksStore = defineStore('breaks', () => {
 
   async function endBreak(employeeId: string) {
     try {
+      // Send normalized break_start in body so the backend can use it
+      // instead of re-parsing the Firestore-stored timestamp (which may have
+      // irregular fractional digits that break Python's fromisoformat)
+      const body: Record<string, string> = {}
+      if (currentBreak.value?.break_start) {
+        const normalized = normalizeTimestamp(currentBreak.value.break_start)
+        if (normalized) {
+          body.break_start = normalized
+        }
+      }
+
       const response = await apiClient.put(
-        `/personal/time-tracking/breaks/current/end?employee_id=${employeeId}`
+        `/personal/time-tracking/breaks/current/end?employee_id=${employeeId}`,
+        body
       )
 
       if (response.data.success && response.data.break) {
-        currentBreak.value = response.data.break
+        currentBreak.value = {
+          ...response.data.break,
+          break_start: normalizeTimestamp(response.data.break.break_start) ?? response.data.break.break_start,
+          break_end: normalizeTimestamp(response.data.break.break_end) ?? response.data.break.break_end
+        }
       }
 
       return response.data
@@ -81,8 +102,8 @@ export const useBreaksStore = defineStore('breaks', () => {
       if (response.data && response.data.active_break) {
         currentBreak.value = {
           id: response.data.active_break.id,
-          break_start: response.data.active_break.break_start,
-          break_end: response.data.active_break.break_end,
+          break_start: normalizeTimestamp(response.data.active_break.break_start) ?? response.data.active_break.break_start,
+          break_end: normalizeTimestamp(response.data.active_break.break_end),
           break_type: response.data.active_break.break_type
         }
       } else {
