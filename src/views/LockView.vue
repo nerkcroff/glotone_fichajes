@@ -44,10 +44,17 @@
           <p class="employee-name">{{ currentEmployeeName }}</p>
           <p class="welcome-message">Tu entrada ha sido registrada</p>
           <p class="time-display">{{ currentTime }}</p>
-          <div class="reminder-box">
-            <p class="reminder-icon">📱🚫</p>
-            <p class="reminder-text">Recuerda dejar tu móvil en la taquilla durante tu turno</p>
+          <div class="phone-policy-box">
+            <p class="phone-policy-icon">📱🚫</p>
+            <p class="phone-policy-title">Recuerda</p>
+            <p class="phone-policy-text">
+              Durante tu turno <strong>no está permitido el uso del teléfono móvil</strong>.
+              Por favor, déjalo en tu taquilla antes de incorporarte a tu puesto.
+            </p>
           </div>
+          <button class="acknowledge-button" @click="returnToPinPad">
+            Entendido
+          </button>
         </div>
 
         <!-- Pantalla de opciones (pausa/salida) -->
@@ -90,6 +97,17 @@
           <p class="employee-name">{{ currentEmployeeName }}</p>
           <p class="welcome-message">Tu turno ha sido reanudado</p>
           <p class="time-display">{{ currentTime }}</p>
+          <div class="phone-policy-box">
+            <p class="phone-policy-icon">📱🚫</p>
+            <p class="phone-policy-title">Recuerda</p>
+            <p class="phone-policy-text">
+              Durante tu turno <strong>no está permitido el uso del teléfono móvil</strong>.
+              Por favor, déjalo en tu taquilla antes de incorporarte a tu puesto.
+            </p>
+          </div>
+          <button class="acknowledge-button" @click="returnToPinPad">
+            Entendido
+          </button>
         </div>
 
         <!-- Pantalla de despedida (después de fichar salida) -->
@@ -99,6 +117,9 @@
           <p class="employee-name">{{ currentEmployeeName }}</p>
           <p class="welcome-message">Tu salida ha sido registrada</p>
           <p class="work-time">Tiempo trabajado: {{ workTime }}</p>
+          <button class="acknowledge-button" @click="returnToPinPad">
+            Volver
+          </button>
         </div>
 
         <!-- Pantalla de inicio de pausa -->
@@ -108,6 +129,9 @@
           <p class="employee-name">{{ currentEmployeeName }}</p>
           <p class="welcome-message">Disfruta tu descanso</p>
           <p class="time-display">{{ currentTime }}</p>
+          <button class="acknowledge-button" @click="returnToPinPad">
+            Volver
+          </button>
         </div>
 
         <!-- Pantalla de sin turno asignado -->
@@ -118,6 +142,9 @@
           <p class="welcome-message">No tienes turno asignado para hoy</p>
           <p class="info-text">No se creará registro de fichaje</p>
           <p class="supervisor-contact">Si crees que es un error, contacta con tu supervisor</p>
+          <button class="acknowledge-button" @click="returnToPinPad">
+            Volver
+          </button>
         </div>
       </div>
     </div>
@@ -154,7 +181,6 @@ const currentEmployeeName = ref('')
 const currentTime = ref('')
 const workTime = ref('')
 
-let autoReturnTimer: number | null = null
 let timeUpdateInterval: number | null = null
 
 const headerTitle = computed(() => {
@@ -167,16 +193,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  clearAutoReturnTimer()
   clearTimeUpdateInterval()
 })
-
-function clearAutoReturnTimer() {
-  if (autoReturnTimer) {
-    clearTimeout(autoReturnTimer)
-    autoReturnTimer = null
-  }
-}
 
 function clearTimeUpdateInterval() {
   if (timeUpdateInterval) {
@@ -186,19 +204,11 @@ function clearTimeUpdateInterval() {
 }
 
 function returnToPinPad() {
-  clearAutoReturnTimer()
   clearTimeUpdateInterval()
   currentScreen.value = 'pin'
   currentEmployeeName.value = ''
   currentTime.value = ''
   workTime.value = ''
-}
-
-function scheduleReturnToPinPad(seconds: number = 15) {
-  clearAutoReturnTimer()
-  autoReturnTimer = window.setTimeout(() => {
-    returnToPinPad()
-  }, seconds * 1000)
 }
 
 function setFixedTime(timestamp: string) {
@@ -291,7 +301,8 @@ async function handlePinSubmit(pin: string) {
         }
       }
 
-      await fetchRateLimit()
+      // Actualizar rate limit en segundo plano (no bloquea)
+      fetchRateLimit()
     } else {
       // PIN incorrecto o bloqueado
       errorMessage.value = response.data.message || 'PIN incorrecto'
@@ -319,23 +330,16 @@ async function handleAutoClockIn() {
 
     // Verificar si el fichaje está pendiente de aprobación
     if (response.pending_approval) {
-      // Mostrar pantalla de pending approval
       currentScreen.value = 'pending-approval'
       if (employeeStore.currentTracking?.clock_in) {
         setFixedTime(employeeStore.currentTracking.clock_in)
       }
-
-      // Volver al PIN pad después de 15 segundos
-      scheduleReturnToPinPad(15)
     } else {
       // Fichaje aprobado automáticamente - Mostrar pantalla de bienvenida
       currentScreen.value = 'welcome'
       if (employeeStore.currentTracking?.clock_in) {
         setFixedTime(employeeStore.currentTracking.clock_in)
       }
-
-      // Volver al PIN pad después de 15 segundos
-      scheduleReturnToPinPad(15)
     }
   } catch (error: any) {
     errorMessage.value = error.response?.data?.detail || 'Error al fichar entrada'
@@ -369,9 +373,6 @@ async function handleStartBreak() {
     if (response.break?.break_start) {
       setFixedTime(response.break.break_start)
     }
-
-    // Volver al PIN pad después de 15 segundos
-    scheduleReturnToPinPad(15)
   } catch (error: any) {
     errorMessage.value = error.response?.data?.detail || 'Error al iniciar pausa'
     showError.value = true
@@ -401,9 +402,6 @@ async function handleClockOut() {
     currentScreen.value = 'goodbye'
 
     clearTimeUpdateInterval()
-
-    // Volver al PIN pad después de 15 segundos
-    scheduleReturnToPinPad(15)
   } catch (error: any) {
     errorMessage.value = error.response?.data?.detail || 'Error al fichar salida'
     showError.value = true
@@ -425,9 +423,6 @@ async function handleAutoResumeBreak() {
     if (response.break?.break_end) {
       setFixedTime(response.break.break_end)
     }
-
-    // Volver al PIN pad después de 15 segundos
-    scheduleReturnToPinPad(15)
   } catch (error: any) {
     errorMessage.value = error.response?.data?.detail || 'Error al reanudar turno'
     showError.value = true
@@ -585,26 +580,60 @@ async function handleLogout() {
   font-family: 'Courier New', monospace;
 }
 
-.reminder-box {
+/* Cuadro de política de móvil */
+.phone-policy-box {
   margin-top: 2rem;
-  padding: 1rem 1.5rem;
-  background: rgba(245, 158, 11, 0.1);
-  border: 2px solid var(--warning);
+  padding: 1.5rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 2px solid var(--danger);
   border-radius: 12px;
   animation: fadeInScale 0.5s ease-out 0.3s both;
 }
 
-.reminder-icon {
-  font-size: 2rem;
+.phone-policy-icon {
+  font-size: 2.5rem;
   margin: 0 0 0.5rem 0;
 }
 
-.reminder-text {
-  font-size: 1rem;
+.phone-policy-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--danger);
+  margin: 0 0 0.5rem 0;
+}
+
+.phone-policy-text {
+  font-size: 1.05rem;
   color: var(--text);
-  font-weight: 600;
+  font-weight: 500;
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.5;
+}
+
+/* Botón de confirmación consciente */
+.acknowledge-button {
+  margin-top: 2rem;
+  padding: 1rem 3rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: fadeInScale 0.5s ease-out 0.6s both;
+}
+
+.acknowledge-button:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.acknowledge-button:active {
+  transform: translateY(0);
 }
 
 .work-time {
